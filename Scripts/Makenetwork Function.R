@@ -101,7 +101,7 @@ makenetwork_abund = function(abund,plotgraph=TRUE,community=TRUE,threshold=0,inc
   isolates = V(ig)[ degree(ig)==0 ]
   ignoisol = delete.vertices(ig, V(ig)[ degree(ig) == 0])
   if (plotgraph==TRUE){
-    plot(ignoisol, layout=layout.fruchterman.reingold,
+    plot(ignoisol, layout=circle,
          vertex.size=0.6, vertex.label.dist=0.1,
          edge.arrow.mode="-",vertex.color="red",
          vertex.label=NA,edge.color="blue")
@@ -126,9 +126,9 @@ makenetwork_abund = function(abund,plotgraph=TRUE,community=TRUE,threshold=0,inc
 #************************************************************************************************#
 
 # Loading data ####
-setwd("./Clean data")
+setwd("../Clean data")
 # data <- read.csv("../Clean data/finally_hooray.csv")
-data <- read.csv("finally_hooray.csv")
+data <- read.csv("full_rough.csv")
 # levels(data$TAXATYPE)
 
 gr = c(10,30,60)
