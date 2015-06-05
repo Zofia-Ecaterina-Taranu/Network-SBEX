@@ -21,27 +21,39 @@ makenetwork <- function(spe, threshold, groups, plot= FALSE){
 
     spe = spe %*% t(spe)
     ## set diagonal to 0 (self-interaction)
-    diag(spe) <- 0 
+    diag(spe) <- 0
     ## spe = 1*(spe>threshold)
     ## Creating the graph
     ig = graph.adjacency(spe, mode= "undirected", weighted = TRUE)
+    ly = make_layout(ig, groups)
+    deg  = degree(ig)
+    deg[deg>0] <-6
+    deg = deg + 2
     if(plot)
-        plot(ig, layout=layout.fruchterman.reingold,
-             vertex.size=0.6, vertex.label.dist=0.1,
-             edge.arrow.mode="-",vertex.color="red",
-             vertex.label=NA,edge.color="blue")
+        plot(ig, layout=20*ly,
+             vertex.size=deg, vertex.label.dist=0.5,
+             edge.arrow.mode="-",vertex.color=groups,
+             vertex.label=NA, edge.color="blue", edge.width= 500*E(ig)$weight)
     ## title("Abund dist")
-    list(mod = modularity(x = ig, membership=groups, weights =E(ig)$weight),
-         no.edge = ecount(ig), 
-         e.density = ecount(ig)/(ecount(ig)*(ecount(ig)-1)/2)*100, # realized/ total
-         # avg.path = average.path.length(ig),
-         no.clust = no.clusters(ig),
-         max.clust.size = max(clusters(ig)$csize),
-         avg.clust.size = mean(clusters(ig)$csize))
+    ## list(mod = modularity(x = ig, membership=groups, weights =E(ig)$weight),
+    ##      no.edge = ecount(ig),
+    ##      e.density = ecount(ig)/(ecount(ig)*(ecount(ig)-1)/2)*100, # realized/ total
+    ##      # avg.path = average.path.length(ig),
+    ##      no.clust = no.clusters(ig),
+    ##      max.clust.size = max(clusters(ig)$csize),
+    ##      avg.clust.size = mean(clusters(ig)$csize))
          # transit = transitivity(ig),
          # connectance = vcount(ig)/(ecount(ig))^2, # from Coll et al. (2011) Table 2
-         # l.density = vcount(ig)/ecount(ig), # from Coll et al. (2011) Table 2 
-         
+         # l.density = vcount(ig)/ecount(ig), # from Coll et al. (2011) Table 2
+
+}
+
+make_layout<-function(ig, groups){
+    ## A function that takes an igraph object and goup labels and creates a circle
+    ## layout.
+    ly = layout.circle(ig)
+    ly.new = ly[order(order(groups)),]
+    ly.new
 }
 
 makenetwork(re_data_sp_site[1,], groups=groups,plot=T)
@@ -58,7 +70,7 @@ NTW$LAKE_ORIGIN <- as.factor(NTW$LAKE_ORIGIN)
 
 par(mfrow=c(1,3))
 # Modularity vs Phosphorus, Nitrogen and TN:TP ratio
-# The modularity can be either positive or negative, with positive values indicating the 
+# The modularity can be either positive or negative, with positive values indicating the
 # possible presence of community structure. Negative values indicate disassortative mixing
 plot(log(NTW[,'PTL']), (NTW[,'mod.mod']), col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
 plot(log(NTW[,'NTL']), (NTW[,'mod.mod']), col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
@@ -83,3 +95,30 @@ plot(log(NTW[,'NTL_PTL']), (NTW[,'mod.max.clust.size']), col=NTW[,'LAKE_ORIGIN']
 plot(log(NTW[,'PTL']), (NTW[,'mod.avg.clust.size']), col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
 plot(log(NTW[,'PTL']), (NTW[,'mod.avg.clust.size']), col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
 plot(log(NTW[,'NTL_PTL']), (NTW[,'mod.avg.clust.size']), col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
+
+
+## Creating groups
+gp =list(g1 = sample(unique(data$SITE_ID[which(data$PTL<=10)]), 4),
+    g2 = sample(unique(data$SITE_ID[which(data$PTL>10 & data$PTL <= 30)]), 4),
+    g3 = sample(unique(data$SITE_ID[which(data$PTL>30 & data$PTL <= 60)]), 4),
+    g4 = sample(unique(data$SITE_ID[which(data$PTL>60)]), 4))
+
+k=1
+
+gp_id = sapply(gp, function(r, g){
+                   ## r is the sublist g1, g2, etc.
+                   pdf(paste(k, '.pdf'))
+                   par(mfrow=c(2,2))
+                   aux = which(data_sp_site$SITE_ID %in% r)
+                   for (i in 1:length(aux)){
+                       makenetwork(re_data_sp_site[aux[i],],groups= g, plot=TRUE)
+                       tl = data$PTL[which(data$SITE_ID==r[i])[1]]
+                       title(paste('PTL:', tl))
+                   }
+                   dev.off()
+                   k<<-k+1
+               }, g=groups)
+
+
+
+
