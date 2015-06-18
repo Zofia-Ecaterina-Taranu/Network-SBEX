@@ -1,0 +1,45 @@
+Description of raw NLA datafiles and list of known issues: 
+
+CONTEMPDIATOMS.csv --> diatom count data from water column of lakes sampled (in case: http://en.wikipedia.org/wiki/Diatom)
+Characteristics: 
+- approximately 10% of lakes re-sampled a 2nd time
+- samples come from a single location in each lake
+- counts reliable, standard counting up to 500 individuals 
+- species level taxonomy (quality controlled) 
+- data is in longformat, so each row is a lake by species combination
+
+
+CONTEMPPHYTO.csv --> phytoplankton abundance data from water column of lakes sampled (in case: http://en.wikipedia.org/wiki/Phytoplankton)
+Characteristics:
+- approximately 10% of lakes re-sampled a 2nd time
+- samples come from a single location in each lake
+- note that while diatoms are a type of phytoplankton, the phytoplankton data does NOT include diatoms. 
+- discrepancies in taxonomic resolution, unsure of reliability of species-level identifications
+- biovolume data is available but questions abound regarding it's trustworthiness (ask Zo or Amanda) 
+
+
+CONTEMPZOO.csv --> zooplankton COUNT data from water column of lakes sampled (in case: http://en.wikipedia.org/wiki/Zooplankton)
+Characteristics: 
+- approximately 10% of lakes re-sampled a 2nd time
+- samples come from a single location in each lake
+- the 'ABUND' column is actually raw counts (not actual abundance)- we can convert this based on additional data procured from NLA (i.e. volume of water sampled)
+- discrepancies in taxonomic resolution, unsure of reliability of species-level identifications
+- certain taxa only to order or genus level 
+- information on functional/trophic group for some of the taxa (will have to be completed- lit review)
+
+
+LAKEINFO.csv --> Location data 
+Characteristics: 
+- includes latitude and longitude, ecoregion, origin (natural or reservoir--> key to consider) amongst other variables
+- see "LakesInformation_Sampled_info_20091113.txt" for metadata
+
+
+LAKEWATERQUAL.csv --> Water chemistry variables --> this is where we will get our stress variables!!!
+Characteristics: 
+- see "Lake_watqual_info_2091123.txt" for metadata
+- "PTL" refers to total phosphorous and is most likely one of the variables we will use to indicate stress on the landscape. 
+- Other stress variable options: 
+   SECMEAN - Secchi disk depth (water clarity)
+   NTL - total nitrogen (nutrient input)
+   CHLA - chlorophyll a, measure of productivity (somewhat redundant with PTL and NTL, also relies directly on phytoplankton)
+
