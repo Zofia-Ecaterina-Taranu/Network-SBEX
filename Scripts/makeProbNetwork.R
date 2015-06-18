@@ -6,6 +6,8 @@ options(help_type = "html")
 library(reshape2)
 library(igraph)
 library(vegan)
+library(ggplot2)
+
 # Loading data ####
 full <- read.csv("../Clean data/full_rough.csv", as.is=TRUE)
 data <- full[!is.na(full$BIOMASS),] # Removing rows with NAs for BIOMASS
@@ -45,15 +47,14 @@ makenetwork <- function(spe, threshold, groups, plot= FALSE){
         e.density = ecount(ig)/(ecount(ig)*(ecount(ig)-1)/2)*100, # realized/ total
         # avg.path = average.path.length(ig),
         no.clust = no.clusters(ig),
-        max.clust.size = max(clusters(ig)$csize),
         connectance = vcount(ig)/(ecount(ig))^2, # from Coll et al. (2011) Table 2
         # transit = transitivity(ig),
         # l.density = vcount(ig)/ecount(ig), # from Coll et al. (2011) Table 2
-        Degree = degree(ig),
-        Closeness = closeness(ig), # vertex is ‘central’ if it is ‘close’ to many other vertices
-        Betweenness = betweenness(ig), # extent to which a vertex is located ‘between’ other pairs of vertices; ‘importance’ relates to where a vertex is located with respect to the paths in the network graph
-        Eigenvector= evcent(ntw[[3]])$vector, # 'prestige' the more central the neighbors of a vertex are, the more central that vertex itself is
-        PageRank = page.rank(ntw[[3]])$vector)
+        avg.degree = degree(ig),
+        avg.closeness = mean(closeness(ig)), # vertex is ‘central’ if it is ‘close’ to many other vertices
+        avg.betweenness = mean(betweenness(ig)), # extent to which a vertex is located ‘between’ other pairs of vertices; ‘importance’ relates to where a vertex is located with respect to the paths in the network graph
+        avg.eigenvector= mean(evcent(ig)$vector), # 'prestige' the more central the neighbors of a vertex are, the more central that vertex itself is
+        max.clust.size = max(clusters(ig)$csize),
         avg.clust.size = mean(clusters(ig)$csize))
 }
 
@@ -137,75 +138,75 @@ stats = apply(re_data_sp_site, 1, function(r,g) makenetwork(r, groups=g), g= gro
 stats = do.call(rbind, stats)
 
 NTW = unique(data[,c('SITE_ID', 'PTL', 'NTL','LAKE_ORIGIN')])
-NTW$NTL_PTL = NTW$NTL/NTW$PTL
-
 aux = sapply(NTW[,'SITE_ID'], function(r) which(r==data_sp_site[,'SITE_ID']))
 NTW = cbind(NTW, mod = stats[aux, ])
-colnames(NTW)
 NTW$LAKE_ORIGIN <- as.factor(NTW$LAKE_ORIGIN)
 
-par(mfrow=c(1,1))
-# Modularity vs Phosphorus, Nitrogen and TN:TP ratio
+# Modularity vs Phosphorus and Nitrogen
 # The modularity can be either positive or negative, with positive values indicating the
 # possible presence of community structure. Negative values indicate disassortative mixing
 ggplot(data=NTW, aes(x=PTL,y=as.numeric(mod.mod))) + geom_point() + labs(x="PTL",y="log10(Modularity)") + scale_x_log10()
 ggplot(data=NTW, aes(x=NTL,y=as.numeric(mod.mod))) + geom_point() + labs(x="NTL",y="log10(Modularity)") + scale_x_log10()
 
-# Edge number vs Phosphorus, Nitrogen and TN:TP ratio
+# Edge number vs Phosphorus and Nitrogen
 ggplot(data=NTW, aes(x=PTL,y=as.numeric(mod.no.edge))) + geom_point() + labs(x="log10(PTL)",y="# edges") + scale_x_log10()
 ggplot(data=NTW, aes(x=NTL,y=as.numeric(mod.no.edge))) + geom_point() + labs(x="log10(NTL)",y="# edges") + scale_x_log10()
 
-# Cluster number vs Phosphorus, Nitrogen and TN:TP ratio
+# Cluster number vs Phosphorus and Nitrogen
 ggplot(data=NTW, aes(x=PTL,y=as.numeric(mod.no.clust))) + geom_point() + labs(x="log10(PTL)",y="# edges") + scale_x_log10()
 ggplot(data=NTW, aes(x=NTL,y=as.numeric(mod.no.clust))) + geom_point() + labs(x="log10(NTL)",y="# edges") + scale_x_log10()
 
-# Max cluster size vs Phosphorus, Nitrogen and TN:TP ratio
+# Max cluster size vs Phosphorus and Nitrogen
 ggplot(data=NTW, aes(x=PTL,y=as.numeric(mod.max.clust.size))) + geom_point() + labs(x="log10(PTL)",y="Max # clusters") + scale_x_log10()
 ggplot(data=NTW, aes(x=NTL,y=as.numeric(mod.max.clust.size))) + geom_point() + labs(x="log10(NTL)",y="Max # clusters") + scale_x_log10()
 
-# Avg cluster size vs Phosphorus, Nitrogen and TN:TP ratio
+# Avg cluster size vs Phosphorus and Nitrogen
 ggplot(data=NTW, aes(x=PTL,y=as.numeric(mod.avg.clust.size))) + geom_point() + labs(x="log10(PTL)",y="Avg # clusters") + scale_x_log10()
 ggplot(data=NTW, aes(x=NTL,y=as.numeric(mod.avg.clust.size))) + geom_point() + labs(x="log10(NTL)",y="Avg # clusters") + scale_x_log10()
 
+# Avg closeness vs Phosphorus and Nitrogen
+ggplot(data=NTW, aes(x=PTL,y=as.numeric(mod.avg.closeness))) + geom_point() + labs(x="log10(PTL)",y="Avg # closeness") + scale_x_log10()
+ggplot(data=NTW, aes(x=NTL,y=as.numeric(mod.avg.closeness))) + geom_point() + labs(x="log10(NTL)",y="Avg # closeness") + scale_x_log10()
+
 # Does LCBD of each site relate to network prop? ####
-data_sp_site <- data_sp_site[aux,]
-data_sp_site <- data_sp_site[,-c(1)] # remove SITE_ID column
-mat.chord <- decostand(data_sp_site,"normalize")
-s <- scale(mat.chord, center=TRUE, scale=FALSE)^2
-SStotal <- sum(s) 
-BD <- SStotal/(ncol(s)-1)
-LCBD <- apply(s, 1, sum)/SStotal
-SCBD <- apply(s,2,sum)/SStotal
-
-x <- seq(1:length(LCBD))
-y <- rep(1,length(LCBD))
-plot(x,y,cex=LCBD*50,pch=19,col="firebrick2")
-
-x <- seq(1:length(SCBD))
-y <- rep(1,length(SCBD))
-plot(x,y,cex=SCBD*20,pch=19,col="firebrick2")
-
-sort(SCBD*20,decreasing=T)[1:20]
-sort(LCBD*20,decreasing=T)[1:20]
-
-NTW = cbind(NTW,LCBD)
-# Avg cluster size vs LCBD
-plot(NTW[,'LCBD'], NTW[,'mod.avg.clust.size'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-
-# Modularity vs LCBD. Negative values indicate disassortative mixing
-plot(NTW[,'LCBD'], NTW[,'mod.mod'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-
-# Edge number vs LCBD
-plot(NTW[,'LCBD'], NTW[,'mod.no.edge'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-
-# Cluster number vs LCBD
-plot(NTW[,'LCBD'], NTW[,'mod.no.clust'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-
-# Max cluster size vs LCBD
-plot(NTW[,'LCBD'], NTW[,'mod.max.clust.size'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-
-# Avg cluster size vs Phosphorus, Nitrogen and TN:TP ratio
-plot(NTW[,'LCBD'], NTW[,'mod.avg.clust.size'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-
-# Connectance vs Phosphorus, Nitrogen and TN:TP ratio
-plot(NTW[,'LCBD'], NTW[,'mod.connectance'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
+# data_sp_site <- data_sp_site[aux,]
+# data_sp_site <- data_sp_site[,-c(1)] # remove SITE_ID column
+# mat.chord <- decostand(data_sp_site,"normalize")
+# s <- scale(mat.chord, center=TRUE, scale=FALSE)^2
+# SStotal <- sum(s) 
+# BD <- SStotal/(ncol(s)-1)
+# LCBD <- apply(s, 1, sum)/SStotal
+# SCBD <- aply(s,2,sum)/SStotal
+# 
+# x <- seq(1:length(LCBD))
+# y <- rep(1,length(LCBD))
+# plot(x,y,cex=LCBD*50,pch=19,col="firebrick2")
+# 
+# x <- seq(1:length(SCBD))
+# y <- rep(1,length(SCBD))
+# plot(x,y,cex=SCBD*20,pch=19,col="firebrick2")
+# 
+# sort(SCBD*20,decreasing=T)[1:20]
+# sort(LCBD*20,decreasing=T)[1:20]
+# 
+# NTW = cbind(NTW,LCBD)
+# # Avg cluster size vs LCBD
+# plot(NTW[,'LCBD'], NTW[,'mod.avg.clust.size'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
+# 
+# # Modularity vs LCBD. Negative values indicate disassortative mixing
+# plot(NTW[,'LCBD'], NTW[,'mod.mod'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
+# 
+# # Edge number vs LCBD
+# plot(NTW[,'LCBD'], NTW[,'mod.no.edge'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
+# 
+# # Cluster number vs LCBD
+# plot(NTW[,'LCBD'], NTW[,'mod.no.clust'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
+# 
+# # Max cluster size vs LCBD
+# plot(NTW[,'LCBD'], NTW[,'mod.max.clust.size'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
+# 
+# # Avg cluster size vs Phosphorus, Nitrogen and TN:TP ratio
+# plot(NTW[,'LCBD'], NTW[,'mod.avg.clust.size'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
+# 
+# # Connectance vs Phosphorus, Nitrogen and TN:TP ratio
+# plot(NTW[,'LCBD'], NTW[,'mod.connectance'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
