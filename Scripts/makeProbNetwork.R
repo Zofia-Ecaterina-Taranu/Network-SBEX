@@ -25,13 +25,13 @@ groups = as.numeric(factor(groups))
 makenetwork <- function(spe, threshold, groups, plot= FALSE){
   ##  Makeing network per site based on relative abundance.
   if(missing(threshold)) threshold =0
-  
+
   spe = spe %*% t(spe)
   ## set diagonal to 0 (self-interaction)
   diag(spe) <- 0
   ## spe = 1*(spe>threshold)
   ## Creating the graph
-  ig = graph.adjacency(spe, mode= "undirected", weighted = TRUE)
+  ig <- graph.adjacency(spe, mode= "undirected", weighted = TRUE)
   ly = make_layout(ig, groups)
   deg  = degree(ig)
   deg[deg>0] <- 6
@@ -68,7 +68,7 @@ make_layout<-function(ig, groups){
 
 # Plotting by groups ####
 
-# Creating groups 
+# Creating groups
 gp =list(g1 = sample(unique(data$SITE_ID[which(data$PTL<=10)]), 4),
          g2 = sample(unique(data$SITE_ID[which(data$PTL>10 & data$PTL <= 30)]), 4),
          g3 = sample(unique(data$SITE_ID[which(data$PTL>30 & data$PTL <= 60)]), 4),
@@ -96,8 +96,8 @@ gp_id = sapply(gp, function(r, g){
 # par(mfrow=c(2,2))
 # Oligotrophic example
 # r="NLA06608-1167"
-# r="NLA06608-3890"   
-# r="NLA06608-NH4912" 
+# r="NLA06608-3890"
+# r="NLA06608-NH4912"
 # aux = which(data_sp_site$SITE_ID %in% r)
 # makenetwork(re_data_sp_site[aux,],groups= groups, plot=TRUE)
 # tl <- data$PTL[which(data$SITE_ID==r[1])[1]]
@@ -115,7 +115,7 @@ gp_id = sapply(gp, function(r, g){
 # Eutrophic example
 # r="NLA06608-2955"
 # r="NLA06608-1724"
-# r="NLA06608-0219" 
+# r="NLA06608-0219"
 # aux = which(data_sp_site$SITE_ID %in% r)
 # makenetwork(re_data_sp_site[aux,],groups= groups, plot=TRUE)
 # tl <- data$PTL[which(data$SITE_ID==r[1])[1]]
@@ -123,7 +123,7 @@ gp_id = sapply(gp, function(r, g){
 
 # Hypereutrophic example
 # r="NLA06608-1239"
-# r="NLA06608-2123" 
+# r="NLA06608-2123"
 # r="NLA06608-2831"
 # aux = which(data_sp_site$SITE_ID %in% r)
 # makenetwork(re_data_sp_site[aux,],groups= groups, plot=TRUE)
@@ -173,40 +173,40 @@ ggplot(data=NTW, aes(x=NTL,y=as.numeric(mod.avg.closeness))) + geom_point() + la
 # data_sp_site <- data_sp_site[,-c(1)] # remove SITE_ID column
 # mat.chord <- decostand(data_sp_site,"normalize")
 # s <- scale(mat.chord, center=TRUE, scale=FALSE)^2
-# SStotal <- sum(s) 
+# SStotal <- sum(s)
 # BD <- SStotal/(ncol(s)-1)
 # LCBD <- apply(s, 1, sum)/SStotal
 # SCBD <- aply(s,2,sum)/SStotal
-# 
+#
 # x <- seq(1:length(LCBD))
 # y <- rep(1,length(LCBD))
 # plot(x,y,cex=LCBD*50,pch=19,col="firebrick2")
-# 
+#
 # x <- seq(1:length(SCBD))
 # y <- rep(1,length(SCBD))
 # plot(x,y,cex=SCBD*20,pch=19,col="firebrick2")
-# 
+#
 # sort(SCBD*20,decreasing=T)[1:20]
 # sort(LCBD*20,decreasing=T)[1:20]
-# 
+#
 # NTW = cbind(NTW,LCBD)
 # # Avg cluster size vs LCBD
 # plot(NTW[,'LCBD'], NTW[,'mod.avg.clust.size'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-# 
+#
 # # Modularity vs LCBD. Negative values indicate disassortative mixing
 # plot(NTW[,'LCBD'], NTW[,'mod.mod'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-# 
+#
 # # Edge number vs LCBD
 # plot(NTW[,'LCBD'], NTW[,'mod.no.edge'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-# 
+#
 # # Cluster number vs LCBD
 # plot(NTW[,'LCBD'], NTW[,'mod.no.clust'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-# 
+#
 # # Max cluster size vs LCBD
 # plot(NTW[,'LCBD'], NTW[,'mod.max.clust.size'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-# 
+#
 # # Avg cluster size vs Phosphorus, Nitrogen and TN:TP ratio
 # plot(NTW[,'LCBD'], NTW[,'mod.avg.clust.size'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
-# 
+#
 # # Connectance vs Phosphorus, Nitrogen and TN:TP ratio
 # plot(NTW[,'LCBD'], NTW[,'mod.connectance'], col=NTW[,'LAKE_ORIGIN'], pch=as.numeric(NTW[,'LAKE_ORIGIN']))
