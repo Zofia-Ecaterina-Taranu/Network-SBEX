@@ -3,6 +3,9 @@
 
 # Need: Clean data, Network metrics, ways to fit alternative responses (linear vs. stable state)
 
+## Loading libraries
+library(reshape2)
+
 ##  Data sources
 phyto <- read.csv("../Raw data from NLA/CONTEMPPHYTO.csv", as.is=T)
 diatom <- read.csv("../Raw data from NLA/CONTEMPDIATOMS.csv", as.is=T)
@@ -11,21 +14,41 @@ zoo <- read.csv("../Raw data from NLA/CONTEMPZOO.csv", as.is=T)
 lakewater = read.csv('../Raw data from NLA/LAKEWATERQUAL.csv', as.is=TRUE)
 lake <- read.csv("../Raw data from NLA/LAKEINFO.csv", as.is=T)
 ## Columns of final data set
-col.subset <- c("SITE_ID","VISIT_NO","SAMPLE_CATEGORY","GENUS","TAXANAME","abund_ml","MESH_SIZE", "T_GROUP", "TAXATYPE","BIOVOLUME")
+col.subset <- c("SITE_ID","VISIT_NO","SAMPLE_CATEGORY","GENUS","TAXANAME","abund_ml", "T_GROUP", "TAXATYPE","BIOVOLUME")
 
 ## ZOOPLANKTON
+# (note: modified June 19th 2015 to add in nauplii and fix issue with duplicate taxanames per date)
+zoo$NAUPLII[zoo$NAUPLII == "Y"] <- "Naup" #If yes for Nauplii call Naup
+zoo$NAUPLII[zoo$NAUPLII == "N"]<- "Adult" #If no for Nauplii call Adult 
+zoo$TAXANAME <- paste(zoo$TAXANAME, zoo$NAUPLII, sep="_") # add adult vs nauplii specification to TAXANAME
+zoo$TAXANAME[zoo$TAXANAME == "_"] <- "" # we don't want to sum all _
+zoo$TAXANAME[zoo$TAXANAME == "_Adult"] <- "" # we don't want to sum all Adults
+zoo$TAXANAME[zoo$TAXANAME == "_Naup"] <- "" # we don't want to sum all Nauplii
+zoo <- zoo[-which(zoo$TAXANAME==""),] # remove all blanks, don't want to sum
 zoo$abund_samp <- (zoo$ABUND/zoo$VOL_COUNT)*zoo$INIT_VOL
 zoo$d <- pi*(0.0635)^2*zoo$DEPTH_OF_TOW
 zoo$abund_ml <- (zoo$abund_samp/zoo$d)
-zoo$TAXATYPE <- "zooplankton"
-zoo$T_GROUP <- rep('Zooplankton', nrow(zoo))
+zoo$TAXATYPE <- "Zooplankton"
+zoo$T_GROUP <- paste(zoo$TAXATYPE, zoo$FFG, sep="_") #Add trophic designation for zooplankton (carnivores etc.)
+zoo$T_GROUP[zoo$T_GROUP == "Zooplankton_"] <- "Zooplankton"
 zoo$BIOVOLUME <- rep(NA, nrow(zoo))
+zoo <- zoo[-which(zoo$MESH_SIZE==243),] # remove 243 form MESH_SIZE (need to do this now because of dcast below)
 zoo <- zoo[,col.subset]
+
+# sum abund_ml by TAXANAME to revome duplicates per site 
+zoo_cast <- dcast(zoo, SITE_ID ~ TAXANAME, value.var="abund_ml", fun=sum,fill=0)
+zoo_melt <- melt(zoo_cast, id.vars = c("SITE_ID"), measured.vas = "abund_ml",
+                       variable.name = "TAXANAME", value.name = "abund_ml")
+zoo_melt <- zoo_melt[!is.na(zoo_melt$abund_ml),]
+zoo_melt <- zoo_melt[zoo_melt$abund_ml!=0,]
+# Need to add back unique values from columns "VISIT_NO", "SAMPLE_CATEGORY","GENUS",
+# "T_GROUP", "TAXATYPE","BIOVOLUME" of zoo that correspond to unique "SITE_ID" & "TAXANAME"
+# combo of zoo_melt...
+ 
 
 ## PHYTOPLANKTON
 ## remove diatoms
 phyto <- phyto[-grep("diatom",phyto$TAXATYPE,ignore.case=TRUE),]
-phyto$MESH_SIZE <- rep(NA, nrow(phyto))
 phyto$T_GROUP<-"Phytoplankton"
 names(phyto)[which(names(phyto)=='ABUND')]<-'abund_ml'
 phyto <- phyto[,col.subset]
@@ -33,7 +56,6 @@ phyto <- phyto[,col.subset]
 ## DIATOM
 diatom$abund_ml <- diatom$COUNT/diatom$CONC_VOL
 diatom$TAXATYPE <- "Diatoms"
-diatom$MESH_SIZE <- rep(NA, nrow(diatom))
 diatom$T_GROUP<-rep("Phytoplankton",nrow(diatom))
 diatom$BIOVOLUME<-rep(NA,nrow(diatom))
 diatom <- diatom[,col.subset]
@@ -50,9 +72,6 @@ full <- full[full$SAMPLE_CATEGORY=="P",]
 # Removing rows with NA in SITE_ID and abund_ml, and abund_ml==0
 full <- full[!is.na(full$abund_ml),]
 # full <- full[full$abund_ml>0,]  # Note (from Zo & Amanda): we should not delete abund_ml==0
-
-## remove 243 form MESH_SIZE
-full<-full[-which(full$MESH_SIZE==243),]
 
 ## Removing empty TAXANAME and TAXATYPE
 full<-full[-which(full$TAXANAME==""),]
