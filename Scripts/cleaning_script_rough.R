@@ -13,6 +13,9 @@ lake <- read.csv("../Raw data from NLA/LAKEINFO.csv", as.is=T)
 col.subset <- c("SITE_ID","VISIT_NO","SAMPLE_CATEGORY","GENUS","TAXANAME","abund_ml","MESH_SIZE", "T_GROUP", "TAXATYPE","BIOVOLUME")
 
 ## ZOOPLANKTON
+zoo$NAUPLII[zoo$NAUPLII == "Y"] <- "Naup"
+zoo$NAUPLII[zoo$NAUPLII == "N"] <- "Adult"
+zoo$TAXATYPE_NAUP <- paste(zoo$TAXANAME,zoo$NAUPLII,sep="_")
 zoo$abund_samp <- (zoo$ABUND/zoo$VOL_COUNT)*zoo$INIT_VOL
 zoo$d <- pi*(0.0635)^2*zoo$DEPTH_OF_TOW
 zoo$abund_ml <- (zoo$abund_samp/zoo$d)
@@ -123,6 +126,8 @@ full$BIOMASS[full$TAXATYPE=="zooplankton"] <- full$biomass_ind[full$TAXATYPE=="z
 col.subset <- c("SITE_ID","VISIT_NO","SAMPLE_CATEGORY","GENUS","TAXANAME","abund_ml","MESH_SIZE", "T_GROUP", "TAXATYPE", 
                 "NTL", "PTL", "LAKE_ORIGIN", "LON_DD", "LAT_DD", "BIOMASS","BIOVOLUME")
 full <- full[,col.subset]
+
+full$BIOMASS
 
 ## Writing the file
 write.csv(full, "full_rough.csv", row.names=FALSE)
