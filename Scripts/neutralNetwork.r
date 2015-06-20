@@ -28,12 +28,23 @@ get_neutral_network = function(d){
 pmat = dlply(pdata, "SITE_ID", get_neutral_network)
 pmat = pmat[!laply(pmat, is.null)]
 
+# Measures
+
+# Evenness of the whole network
 even = function(A) exp(sum(A * log(A)) / log(prod(dim(A))))
+
+# Variance of weighted out-degree
+v_out = function(A) var(colSums(A))
+
+# Variance of weighted in-degree
+v_in = function(A) var(rowSums(A))
 
 n_measures = function(x) {
   return(cbind(
     even = even(x),
-    size = prod(dim(x))
+    size = prod(dim(x)),
+    v_out = v_out(x),
+    v_in = v_in(x)
     ))
 }
 
