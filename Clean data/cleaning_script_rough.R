@@ -5,11 +5,11 @@
 
 ## Loading libraries
 library(reshape2)
+library(datatable)
 
 ##  Data sources
 phyto <- read.csv("../Raw data from NLA/CONTEMPPHYTO.csv", as.is=T)
 diatom <- read.csv("../Raw data from NLA/CONTEMPDIATOMS.csv", as.is=T)
-diatom_biovol <- read.csv("NLAdiatoms_biovolumes_CD.csv", as.is=T)
 zoo <- read.csv("../Raw data from NLA/CONTEMPZOO.csv", as.is=T)
 lakewater = read.csv('../Raw data from NLA/LAKEWATERQUAL.csv', as.is=TRUE)
 lake <- read.csv("../Raw data from NLA/LAKEINFO.csv", as.is=T)
@@ -32,19 +32,32 @@ zoo$TAXATYPE <- "Zooplankton"
 zoo$T_GROUP <- paste(zoo$TAXATYPE, zoo$FFG, sep="_") #Add trophic designation for zooplankton (carnivores etc.)
 zoo$T_GROUP[zoo$T_GROUP == "Zooplankton_"] <- "Zooplankton"
 zoo$BIOVOLUME <- rep(NA, nrow(zoo))
-zoo <- zoo[-which(zoo$MESH_SIZE==243),] # remove 243 form MESH_SIZE (need to do this now because of dcast below)
+zoo <- zoo[-which(zoo$MESH_SIZE==243),] # remove 243 form MESH_SIZE (need to do this now because of dcast below - ie. do not want to lump different mesh sizes)
+zoo <- zoo[zoo$abund_ml!=0,]
+zoo <- zoo[!is.na(zoo$abund_ml),]
 zoo <- zoo[,col.subset]
 
 # sum abund_ml by TAXANAME to revome duplicates per site 
 zoo_cast <- dcast(zoo, SITE_ID ~ TAXANAME, value.var="abund_ml", fun=sum,fill=0)
 zoo_melt <- melt(zoo_cast, id.vars = c("SITE_ID"), measured.vas = "abund_ml",
                        variable.name = "TAXANAME", value.name = "abund_ml")
-zoo_melt <- zoo_melt[!is.na(zoo_melt$abund_ml),]
 zoo_melt <- zoo_melt[zoo_melt$abund_ml!=0,]
-# Need to add back unique values from columns "VISIT_NO", "SAMPLE_CATEGORY","GENUS",
-# "T_GROUP", "TAXATYPE","BIOVOLUME" of zoo that correspond to unique "SITE_ID" & "TAXANAME"
-# combo of zoo_melt...
- 
+
+# Add back unique values from remaining columns of zoo (ie. "VISIT_NO", "SAMPLE_CATEGORY","GENUS",
+# "T_GROUP", "TAXATYPE","BIOVOLUME") that correspond to unique "SITE_ID" & "TAXANAME" of zoo_melt
+zoo_melt$TAXA_SITE <- paste(zoo_melt$TAXANAME, zoo_melt$SITE_ID, sep="_")
+
+zoo$TAXA_SITE <- paste(zoo$TAXANAME, zoo$SITE_ID, sep="_")
+col.subset2 <- c("VISIT_NO","SAMPLE_CATEGORY","GENUS","T_GROUP","TAXATYPE","BIOVOLUME","TAXA_SITE")
+zoo <- zoo[,col.subset2]
+zoo <- zoo[!duplicated(zoo$TAXA_SITE),] # now zoo has the same rows as zoo_melt (8467 obs.)
+
+# Merging the two
+zoo <- data.table(zoo, key = "TAXA_SITE")
+zoo_melt <- data.table(zoo_melt, key = "TAXA_SITE")
+zoo_merged <- zoo_melt[zoo]
+zoo_merged <- as.data.frame(zoo_merged) # to removed sorting by key = "TAXAS_SITE"
+zoo <- zoo_merged[,col.subset]
 
 ## PHYTOPLANKTON
 ## remove diatoms
