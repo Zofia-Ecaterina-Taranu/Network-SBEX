@@ -9,12 +9,11 @@ library(vegan)
 library(ggplot2)
 
 # Loading data ####
-full <- read.csv("../Clean data/full_rough.csv", as.is=TRUE)
+full <- read.csv("../Clean data/full_combined.csv", as.is=TRUE)
 data <- full[!is.na(full$BIOMASS),] # Removing rows with NAs for BIOMASS
 
-# Look at phytoplankton only
-# phyto <- full[full$TAXATYPE=="Blue-Green Algae",]
-# data <- phyto[!is.na(phyto$BIOMASS),]
+# Note (from Zo): Suggestion to replace TAXATYPE by T_GROUP for Zooplankton to break them down a bit more
+data$TAXATYPE[data$TAXATYPE=="Zooplankton"] <- data$T_GROUP[data$TAXATYPE=="Zooplankton"]
 
 # All sites
 data_sp_site <- dcast(data,SITE_ID ~ TAXANAME, value.var="BIOMASS",fun=mean,fill=0)
