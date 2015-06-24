@@ -12,16 +12,12 @@ library(plyr)
 ##  Data sources (2007 NATIONAL LAKE ASSESSMENT - US EPA) # Note: Can read in using either of 2 options below. 
 phyto <- read.csv("../Raw data from NLA/CONTEMPPHYTO.csv", as.is=T) #Soft phytoplankton water-column data 
 #phyto <- read.csv(file.choose(), as.is=T) #CONTEMPPHTO.CSV
-
 diatom <- read.csv("../Raw data from NLA/CONTEMPDIATOMS.csv", as.is=T) #Diatom data counted from slides (water-column)
 #diatom<- read.csv(file.choose(), as.is=T) #CONTEMPDIATOMS.CSV
-
 zoo <- read.csv("../Raw data from NLA/CONTEMPZOO.csv", as.is=T) #Zooplankton water-column data 
 #zoo<- read.csv(file.choose(), as.is=T) #CONTEMPZOO.CSV
-
 lakewater = read.csv('../Raw data from NLA/LAKEWATERQUAL.csv', as.is=TRUE) #Lake water chemistry data 
 #lakewater<- read.csv(file.choose(), as.is=T) #LAKEWATERQUAL.CSV
-
 lake <- read.csv("../Raw data from NLA/LAKEINFO.csv", as.is=T) #Lake info data (site locations etc)
 #lake<- read.csv(file.choose(), as.is=T) #LAKEINFO.CSV 
 
@@ -43,7 +39,7 @@ zoo$abund_samp <- (zoo$ABUND/zoo$VOL_COUNT)*zoo$INIT_VOL
 zoo$d <- pi*(0.0635)^2*zoo$DEPTH_OF_TOW
 zoo$abund_ml <- (zoo$abund_samp/zoo$d)
 zoo$TAXATYPE <- "Zooplankton"
-zoo$T_GROUP <- paste(zoo$TAXATYPE, zoo$FFG, sep="_") #Add trophic designation for zooplankton (carnivores etc.)
+zoo$T_GROUP <- paste(zoo$TAXATYPE, zoo$FFG, sep="_") #Add trophic designation for Zooplankton (carnivores etc.)
 zoo$T_GROUP[zoo$T_GROUP == "Zooplankton_"] <- "Zooplankton"
 zoo$BIOVOLUME <- rep(NA, nrow(zoo))
 #zoo <- zoo[-which(zoo$MESH_SIZE==80),] # remove 243 fromm MESH_SIZE (need to do this now because of dcast below - ie. do not want to lump different mesh sizes)
@@ -52,7 +48,7 @@ zoo <- zoo[!is.na(zoo$abund_ml),]
 zoo <- zoo[,col.subset]
 #NB: Originally we had removed mesh size 243 because we thought there was overlap with those organisms (see line above)
 #found in mesh size 80. But there actually does not appear to be overlap.
-#If we remove mesh size 243, we remove all Cladocerans and Coepods. 
+#If we remove mesh size 243, we remove all Cladocerans and Copepods. 
 #If we remove mesh size 80, we remove all rotifers, so my suggestion is to keep both mesh sizes. 
 
 # sum abund_ml by TAXANAME to revome duplicates per site 
@@ -76,9 +72,7 @@ zoo_melt <- data.table(zoo_melt, key = "TAXA_SITE")
 zoo_merged <- zoo_melt[zoo]
 zoo_merged <- as.data.frame(zoo_merged) # to removed sorting by key = "TAXA_SITE"
 zoo <- zoo_merged[,col.subset]
-
-# Write zoo as a .csv file to check that no longer duplicates for taxa within each site and summing correctly. 
-#write.csv(zoo, "zoo_final.csv") #Looks good! 
+# Checked: No longer duplicates for taxa within each site and summing correctly. 
 
 
 ## PHYTOPLANKTON
@@ -87,7 +81,7 @@ phyto <- phyto[-grep("diatom",phyto$TAXATYPE,ignore.case=TRUE),]
 phyto$T_GROUP<-"Phytoplankton"
 names(phyto)[which(names(phyto)=='ABUND')]<-'abund_ml'
 phyto <- phyto[,col.subset]
-#confirmed, all diatoms removed. 
+# Checked: all diatoms removed. 
 
 
 ## DIATOM
@@ -98,45 +92,45 @@ diatom$BIOVOLUME<-rep(NA,nrow(diatom))
 diatom <- diatom[,col.subset]
 
 #Incorporate diatom biovolumes (From Julien's June 19, 2015 script "diatom_clean_script.R")- use either below to
-#read in diatom biovolume file. NB: Amanda made some modifications after copying JUlien's script- to make work
+#read in diatom biovolume file. NB: Amanda made some modifications after copying Julien's script- to make work
 #with already condensed diatom data. 
-#diatom_biovols <- read.csv("../Clean data/NLAdiatoms_biovolumes_CD.csv", header=T, sep=",")
-diatom_biovols<- read.csv(file.choose(), as.is=T) #NLAdiatoms_biovolumes_CD.csv 
+diatom_biovols <- read.csv("../Clean data/NLAdiatoms_biovolumes_CD.csv", header=T, sep=",")
+# diatom_biovols<- read.csv(file.choose(), as.is=T) #NLAdiatoms_biovolumes_CD.csv 
 
 # Create diatom dataset
 taxanames <- diatom$TAXANAME
 
 ## Standardize all taxanames
 # Parsing functions
-parse_tax_cf <- function(taxanames) {
+parse_tax_cf <- function(taxaname) {
   # Removes "cf." from taxaname
-  taxanames <- gsub(" cf. ", " ", taxanames)
-  taxanames <- gsub(" cff. ", " ", taxanames)
-  taxanames
+  taxaname <- gsub(" cf. ", " ", taxaname)
+  taxaname <- gsub(" cff. ", " ", taxaname)
+  taxaname
 }
-parse_tax_sp <- function(taxanames) {
+parse_tax_sp <- function(taxaname) {
   # Combines sp, spp, sp1, etc. variants
-  taxanames <- gsub(" sp. [0-9]", " sp.", taxanames)
-  taxanames <- gsub(" spp.", " sp.", taxanames)
-  taxanames <- gsub(" sp.[0-9]", " sp.", taxanames)
-  taxanames <- gsub("[?]", "", taxanames)
-  taxanames
+  taxaname <- gsub(" sp. [0-9]", " sp.", taxaname)
+  taxaname <- gsub(" spp.", " sp.", taxaname)
+  taxaname <- gsub(" sp.[0-9]", " sp.", taxaname)
+  taxaname <- gsub("[?]", "", taxaname)
+  taxaname
 }
 # Parse taxaname function
-parse_tax <- function(taxanames) {
+parse_tax <- function(taxaname) {
   # Combines parsing sub-functions
-  taxanames <- parse_tax_cf(taxanames)
-  taxanames <- parse_tax_sp(taxanames)
-  taxanames
+  taxaname <- parse_tax_cf(taxaname)
+  taxaname <- parse_tax_sp(taxaname)
+  taxaname
 }
 # Parse all taxanames
 taxanames_new <- unlist(sapply(taxanames, FUN = parse_tax))
 
 # Split and remake taxanames (removing non species epithets)
-split_join_tax <- function(taxanames) {
-  split_string <- strsplit(as.character(taxanames), " ")[[1]]
-  taxanames <- paste(split_string[1], split_string[2], sep=".")
-  taxanames
+split_join_tax <- function(taxaname) {
+  split_string <- strsplit(as.character(taxaname), " ")[[1]]
+  taxaname <- paste(split_string[1], split_string[2], sep=".")
+  taxaname
 }
 # Split and join taxanames
 taxanames_new <- unlist(sapply(taxanames_new, FUN = split_join_tax))
@@ -161,14 +155,11 @@ diatom_unique <- diatom_unique[colnames(diatom)]
 # Combine data into new full dataset
 diatom_new <- diatom[diatom$TAXATYPE!='Diatoms',]
 diatom_new <- rbind(diatom_new, diatom_unique)
-
-# Write out dataset to CSV to check
-#write.csv(diatom_new, "diatom_new.csv") #Confirmed, diatom biovolumes added in, names fixed. 
+# Checked: Diatom biovolumes are now added in and names are fixed. 
 #NOTE: THERE ARE STILL SOME MISSING DIATOM BIOVOLUMES. 
 
 # Combining condensed dataframes
 full <- rbind(zoo, phyto, diatom_new) #uses fixed diatom data. 
-#write.csv(full, "full_check.csv") #Confirmed, works. 
 
 # Subsetting only first visit to each site
 full <- full[full$VISIT_NO==1,]
@@ -182,9 +173,11 @@ full <- full[!is.na(full$abund_ml),]
 
 ## Removing empty TAXANAME and TAXATYPE
 #full<-full[-which(full$TAXANAME==""),] #Zo, when I run this line, all data removed. 
+# --> Zo: looks like it because there are no entries where TAXANAME == ""; see dim(full[full$TAXANAME=="",]) 
 full<-full[-which(full$TAXATYPE==""),] #Works 
 
 dim(full)# 49160 rows
+# --> Zo: I had 48755 rows
 
 ##  Merging PTL and NTL
 id_col = paste0(lakewater$SITE_ID, lakewater$VISIT_NO, lakewater$SAMPLE_CATEGORY)
@@ -204,48 +197,48 @@ full <- cbind(full, lake[aux,c('LAKE_ORIGIN', 'LON_DD', 'LAT_DD')])
 ## Converting abund/ml data into biomass data
 full$biomass_ind <- rep(NA,nrow(full))
 
-## Applying conversion factors for specific zooplankton taxa
+## Applying conversion factors for specific zooplankton taxa to adults only
 # (note: THIS IS WHERE WE FILL IN OTHER CONVERSION FACTORS AS WE GET THEM FROM THE LIT)
-full$biomass_ind[full$TAXANAME=="Ascomorpha"] <- 0.0177
-full$biomass_ind[full$TAXANAME=="Bosmina"] <- 1.577 
-full$biomass_ind[full$TAXANAME=="Calanoida"] <- 4.2075
-full$biomass_ind[full$TAXANAME=="Collotheca"] <- 0.0001
-full$biomass_ind[full$TAXANAME=="Collothecidae"] <- 0.0001
-full$biomass_ind[full$TAXANAME=="Ceriodaphnia"] <- 0.7107
-full$biomass_ind[full$TAXANAME=="Chydoridae"] <- 1.0742
-full$biomass_ind[full$TAXANAME=="Cyclopidae"] <- 2.7266
-full$biomass_ind[full$TAXANAME=="Daphnia ambigua"] <- 3.332
-full$biomass_ind[full$TAXANAME=="Daphnia mendotae complex"] <- 8.1962
-full$biomass_ind[full$TAXANAME=="Daphnia retrocurva"] <- 2.599
-full$biomass_ind[full$TAXANAME=="Diaphanosoma"] <- 2.8804
-full$biomass_ind[full$TAXANAME=="Diaptomidae"] <- 3.311
-full$biomass_ind[full$TAXANAME=="Filinia"] <- 0.0235
-full$biomass_ind[full$TAXANAME=="Gastropus"] <- 0.00956
-full$biomass_ind[full$TAXANAME=="Kellicottia"] <- 0.0044
-full$biomass_ind[full$TAXANAME=="Kellicottia bostoniensis"] <- 0.0044
-full$biomass_ind[full$TAXANAME=="Kellicottia longispina"] <- 0.0044
-full$biomass_ind[full$TAXANAME=="Keratella hiemalis"] <- 0.0375
-full$biomass_ind[full$TAXANAME=="Keratella quadrata"] <- 0.074
-full$biomass_ind[full$TAXANAME=="Notholca"] <- 0.0061
-full$biomass_ind[full$TAXANAME=="Ploesoma"] <- 0.0225
-full$biomass_ind[full$TAXANAME=="Polyarthra"] <- 0.0378
-full$biomass_ind[full$TAXANAME=="Pompholyx"] <- 0.0209
-full$biomass_ind[full$TAXANAME=="Synchaeta"] <- 0.0409
+full$biomass_ind[full$TAXANAME=="Ascomorpha_Adult"] <- 0.0177 # 6 Adults entries, 58 Nauplii
+full$biomass_ind[full$TAXANAME=="Bosmina_Adult"] <- 1.577 # 444 Adults, 8 Nauplii
+full$biomass_ind[full$TAXANAME=="Calanoida_Adult"] <- 4.2075 # 28 Adults, 1 Nauplii
+full$biomass_ind[full$TAXANAME=="Collotheca_Adult"] <- 0.0001 # 25 Adults, 138 Nauplii
+# full$biomass_ind[full$TAXANAME=="Collothecidae_Adult"] <- 0.0001 # # 0 Adults, 3 Nauplii entries
+full$biomass_ind[full$TAXANAME=="Ceriodaphnia_Adult"] <- 0.7107 # 457 Adults, 4 Nauplii
+full$biomass_ind[full$TAXANAME=="Chydoridae_Adult"] <- 1.0742 # 216 Adults, 0 Nauplii
+full$biomass_ind[full$TAXANAME=="Cyclopidae_Adult"] <- 2.7266 # 1000 Adults, 9 Nauplii
+full$biomass_ind[full$TAXANAME=="Daphnia ambigua_Adult"] <- 3.332 # 72 Adults, 2 Nauplii
+full$biomass_ind[full$TAXANAME=="Daphnia mendotae complex_Adult"] <- 8.1962 # 372 Adults, 1 Nauplii
+full$biomass_ind[full$TAXANAME=="Daphnia retrocurva_Adult"] <- 2.599 # 111 Adults, 0 Nauplii
+full$biomass_ind[full$TAXANAME=="Diaphanosoma_Adult"] <- 2.8804 # 599 Adults, 5 Nauplii
+full$biomass_ind[full$TAXANAME=="Diaptomidae_Adult"] <- 3.311 # 944 Adults, 7 Nauplii
+full$biomass_ind[full$TAXANAME=="Filinia_Adult"] <- 0.0235 # 12 Adults, 339 Nauplii
+full$biomass_ind[full$TAXANAME=="Gastropus_Adult"] <- 0.00956 # 20 Adults, 138 Nauplii
+# full$biomass_ind[full$TAXANAME=="Kellicottia_Adult"] <- 0.0044 # 0 Adults, 1 Nauplii entry
+full$biomass_ind[full$TAXANAME=="Kellicottia bostoniensis_Adult"] <- 0.0044 # 14 Adults, 286 Nauplii
+full$biomass_ind[full$TAXANAME=="Kellicottia longispina_Adult"] <- 0.0044 # 28 Adults, 348 Nauplii
+full$biomass_ind[full$TAXANAME=="Keratella hiemalis_Adult"] <- 0.0375 # 2 Adults, 42 Nauplii
+full$biomass_ind[full$TAXANAME=="Keratella quadrata_Adult"] <- 0.074 # 14 Adults, 258 Nauplii
+full$biomass_ind[full$TAXANAME=="Notholca_Adult"] <- 0.0061 # 3 Adults, 14 Nauplii
+full$biomass_ind[full$TAXANAME=="Ploesoma_Adult"] <- 0.0225 # 11 Adults, 148 Nauplii
+full$biomass_ind[full$TAXANAME=="Polyarthra_Adult"] <- 0.0378 # 33 Adults, 695 Nauplii
+full$biomass_ind[full$TAXANAME=="Pompholyx_Adult"] <- 0.0209 # 11 Adults, 187 Nauplii
+full$biomass_ind[full$TAXANAME=="Synchaeta_Adult"] <- 0.0409 # 13 Adults, 367 Nauplii
 
 
 ## Converted phytoplankton biovolumes to dry biomass (assuming a specific gravity of 1) and a 
 # dry mass: wet mass ratio of 0.10
-full$BIOMASS <- 0.1*full$BIOVOLUME # (note: so all but phytoplankton have NAs, so this conversion does not affect zoops or diatoms)
+full$BIOMASS <- 0.1*full$BIOVOLUME # (note: only phytoplankton and diatoms have entries that are not NA, so this conversion does not affect zooplankton)
 
 ## Convert phytoplankton biovolumes in μg/L to µg/ml (ie. divide by 1000)
 full$BIOMASS <-  0.001*full$BIOMASS
 
-## Calculating zooplankton biomass
+## Calculating Zooplankton biomass (note "Zooplankton" now has a capital "Z")
 # (note: according to National Lake Assessment metadata the Phytoplankton BIOVOLUME = CELL_VOLUME * ABUND 
 # where CELL_VOLUME is the taxa specific biovolume (µm^3 cell/mL water) and ABUND = COUNT/mL
 # Therefore, for zooplankton we took the biomass/indiv. (µg/ indiv. count) x the abund_ml (count/ mL) 
 # to obtain total biomass in µg/ mL)
-full$BIOMASS[full$TAXATYPE=="zooplankton"] <- full$biomass_ind[full$TAXATYPE=="zooplankton"] * full$abund_ml[full$TAXATYPE=="zooplankton"]
+full$BIOMASS[full$TAXATYPE=="Zooplankton"] <- full$biomass_ind[full$TAXATYPE=="Zooplankton"] * full$abund_ml[full$TAXATYPE=="Zooplankton"]
 
 col.subset <- c("SITE_ID","VISIT_NO","SAMPLE_CATEGORY","GENUS","TAXANAME","abund_ml", "T_GROUP", "TAXATYPE", 
                 "NTL", "PTL", "LAKE_ORIGIN", "LON_DD", "LAT_DD", "BIOMASS","BIOVOLUME") #Removed Mesh size column
