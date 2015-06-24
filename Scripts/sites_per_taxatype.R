@@ -1,4 +1,4 @@
-##  A script that aggregates BIOMASS across TAXATYPES
+## A script that aggregates BIOMASS across TAXATYPES
 ## First a network graph is constructed for each SITE_ID, where nodes are all the species
 ## and an edges between a pair of species exist if both do exit, with edge weight as the product of BIOMASSES.
 ## i.e., SITE_ID ~ TAXANAME by BIOMASS.
@@ -8,10 +8,14 @@ library(reshape2)
 library(igraph)
 rm(list=ls())
 ## Loading data
-full <- read.csv("../Clean data/full_rough.csv", as.is=TRUE)
-data <- full[!is.na(full$BIOMASS),] # Removing rows with NAs for BIOMASS
-## Constructing the a matrix of SITE_ID's as rows, TAXANAME as columns filled with each species biomass.
-data_sp_site <- dcast(data,SITE_ID ~ TAXANAME, value.var="BIOMASS",fun=mean,fill=0)
+full <- read.csv("../Clean data/full_combined.csv", as.is=TRUE)
+data <- full[!is.na(full$BIOMASS),] # Removing rows with NAs for BIOMASS (24056 obs. remaining out of 48755)
+
+# Note (from Zo): Suggestion to replace TAXATYPE by T_GROUP for Zooplankton to break them down a bit more
+data$TAXATYPE[data$TAXATYPE=="Zooplankton"] <- data$T_GROUP[data$TAXATYPE=="Zooplankton"]
+
+## Constructing a matrix of SITE_ID's as rows, TAXANAME as columns filled with each species biomass.
+data_sp_site <- dcast(data,SITE_ID ~ TAXANAME, value.var="BIOMASS",fun=mean,fill=0) # Now have 1154 unique sites
 
 
 ## Aggregating the TAXATYPE
