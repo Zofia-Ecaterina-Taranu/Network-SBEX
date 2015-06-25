@@ -55,7 +55,7 @@ makenetwork.TAXATYPE<-function(groups, prob){
     ig = graph.adjacency(M, mode= "undirected", weighted = TRUE)
     ly = layout.circle(ig)
     w = E(ig)$weight/mean(E(ig)$weight)
-    plot(ig, layout=ly,vertex.color=taxatypes, edge.width=w, edge.label=round(100*w,2))
+    plot(ig, layout=ly,vertex.color=taxatypes, edge.width=w, vertex.label=unique(groups[,2]), edge.label=round(100*w,2))
 }
 
 
