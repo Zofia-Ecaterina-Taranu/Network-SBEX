@@ -200,18 +200,23 @@ full$biomass_ind <- rep(NA,nrow(full))
 ## Applying conversion factors for specific zooplankton taxa to adults only
 # (note: THIS IS WHERE WE FILL IN OTHER CONVERSION FACTORS AS WE GET THEM FROM THE LIT)
 full$biomass_ind[full$TAXANAME=="Ascomorpha_Adult"] <- 0.0177 # 6 Adults entries, 58 Nauplii
+full$biomass_ind[full$TAXANAME=="Asplanchna_Adult"] <- 0.57 # 17 Adults entries, 527 Nauplii
 full$biomass_ind[full$TAXANAME=="Bosmina_Adult"] <- 1.577 # 444 Adults, 8 Nauplii
+full$biomass_ind[full$TAXANAME=="Brachionus angularis_Adult"] <- 0.029 # 3 Adults, 388 Nauplii
 full$biomass_ind[full$TAXANAME=="Calanoida_Adult"] <- 4.2075 # 28 Adults, 1 Nauplii
+full$biomass_ind[full$TAXANAME=="Calanoida_Naup"] <- 0.252 
 full$biomass_ind[full$TAXANAME=="Collotheca_Adult"] <- 0.0001 # 25 Adults, 138 Nauplii
 # full$biomass_ind[full$TAXANAME=="Collothecidae_Adult"] <- 0.0001 # # 0 Adults, 3 Nauplii entries
 full$biomass_ind[full$TAXANAME=="Ceriodaphnia_Adult"] <- 0.7107 # 457 Adults, 4 Nauplii
 full$biomass_ind[full$TAXANAME=="Chydoridae_Adult"] <- 1.0742 # 216 Adults, 0 Nauplii
 full$biomass_ind[full$TAXANAME=="Cyclopidae_Adult"] <- 2.7266 # 1000 Adults, 9 Nauplii
+full$biomass_ind[full$TAXANAME=="Cyclopidae_Naup"] <- 0.241 
 full$biomass_ind[full$TAXANAME=="Daphnia ambigua_Adult"] <- 3.332 # 72 Adults, 2 Nauplii
 full$biomass_ind[full$TAXANAME=="Daphnia mendotae complex_Adult"] <- 8.1962 # 372 Adults, 1 Nauplii
 full$biomass_ind[full$TAXANAME=="Daphnia retrocurva_Adult"] <- 2.599 # 111 Adults, 0 Nauplii
 full$biomass_ind[full$TAXANAME=="Diaphanosoma_Adult"] <- 2.8804 # 599 Adults, 5 Nauplii
 full$biomass_ind[full$TAXANAME=="Diaptomidae_Adult"] <- 3.311 # 944 Adults, 7 Nauplii
+full$biomass_ind[full$TAXANAME=="Euchlanis_Adult"] <- 0.1641 # 2 Adults, 62 Nauplii
 full$biomass_ind[full$TAXANAME=="Filinia_Adult"] <- 0.0235 # 12 Adults, 339 Nauplii
 full$biomass_ind[full$TAXANAME=="Gastropus_Adult"] <- 0.00956 # 20 Adults, 138 Nauplii
 # full$biomass_ind[full$TAXANAME=="Kellicottia_Adult"] <- 0.0044 # 0 Adults, 1 Nauplii entry
@@ -224,7 +229,6 @@ full$biomass_ind[full$TAXANAME=="Ploesoma_Adult"] <- 0.0225 # 11 Adults, 148 Nau
 full$biomass_ind[full$TAXANAME=="Polyarthra_Adult"] <- 0.0378 # 33 Adults, 695 Nauplii
 full$biomass_ind[full$TAXANAME=="Pompholyx_Adult"] <- 0.0209 # 11 Adults, 187 Nauplii
 full$biomass_ind[full$TAXANAME=="Synchaeta_Adult"] <- 0.0409 # 13 Adults, 367 Nauplii
-
 
 ## Converted phytoplankton biovolumes to dry biomass (assuming a specific gravity of 1) and a 
 # dry mass: wet mass ratio of 0.10
